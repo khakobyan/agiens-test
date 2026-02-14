@@ -1,0 +1,12 @@
+# OpenClaw Deploy CLI Requirements
+
+# CLI framework
+click>=8.0.0
+
+# Configuration
+PyYAML>=6.0
+
+# Testing (development)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
