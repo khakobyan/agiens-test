@@ -8,7 +8,42 @@ Production-ready Docker setup for [OpenClaw](https://github.com/openclaw/opencla
 - [Docker Compose](https://docs.docker.com/compose/) V2
 - At least one model provider API key (Anthropic, OpenAI, Google AI, or a local Ollama instance)
 
+## Getting Started
+
+### First Time Setup
+```bash
+# 1. Clone the repository
+git clone https://github.com/khakobyan/agiens-test.git
+cd agiens-test
+
+# 2. Run automated setup
+./setup.sh
+
+# 3. Add your API key to .env
+nano .env  # or use your preferred editor
+# Add: ANTHROPIC_API_KEY=sk-ant-your-key-here
+
+# 4. Restart to apply API key
+openclaw-deploy update
+
+# 5. Access OpenClaw
+# Open: http://localhost:18789
+```
+
+### ⚠️ Important: API Keys Required
+
+OpenClaw needs at least ONE model provider API key to function:
+- **Anthropic Claude:** Get key from https://console.anthropic.com/
+- **OpenAI:** Get key from https://platform.openai.com/
+- **Google AI:** Get key from https://ai.google.dev/
+- **Ollama (local):** Install from https://ollama.ai/
+
+Without an API key, the gateway will start but won't be able to process requests.
+
 ## Quick Start
+
+**Already cloned the repo?** Skip to [Option 1](#option-1-automated-setup-recommended)  
+**First time?** See [Getting Started](#getting-started) above.
 
 ### Option 1: Automated Setup (Recommended)
 
