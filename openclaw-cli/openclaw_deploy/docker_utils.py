@@ -236,6 +236,55 @@ def restart_services(config: DeploymentConfig) -> None:
     logger.info("✓ Services restarted successfully")
 
 
+def configure_openclaw(config: DeploymentConfig) -> None:
+    """
+    Configure OpenClaw gateway with local mode and auth token.
+
+    Args:
+        config: Deployment configuration
+
+    Raises:
+        DockerError on failure
+    """
+    logger.info("Configuring OpenClaw gateway...")
+
+    # Set gateway mode to local
+    logger.debug("Setting gateway.mode to local")
+    cmd_mode = [
+        'docker', 'run', '--rm',
+        '-v', f'{config.openclaw_home}:/home/node/.openclaw',
+        f'{config.image_name}',
+        'node', 'dist/index.js', 'config', 'set', 'gateway.mode', 'local'
+    ]
+    run_command(cmd_mode, timeout=30)
+    logger.debug("✓ Gateway mode set to local")
+
+    # Set auth token if provided
+    if config.gateway_token:
+        logger.debug("Setting gateway auth token")
+        cmd_token = [
+            'docker', 'run', '--rm',
+            '-v', f'{config.openclaw_home}:/home/node/.openclaw',
+            f'{config.image_name}',
+            'node', 'dist/index.js', 'config', 'set', 'gateway.auth.token', config.gateway_token
+        ]
+        run_command(cmd_token, timeout=30)
+        logger.debug("✓ Gateway auth token configured")
+
+    # Restart gateway to apply configuration
+    logger.debug("Restarting gateway to apply configuration")
+    env = {**subprocess.os.environ, **config.to_env_dict()}
+    cmd_restart = [
+        'docker', 'compose',
+        '-f', str(config.project_dir / 'docker-compose.yml'),
+        'restart', 'openclaw-gateway'
+    ]
+    run_command(cmd_restart, cwd=config.project_dir, env=env, timeout=60)
+    logger.debug("✓ Gateway restarted")
+
+    logger.info("✓ OpenClaw configuration completed")
+
+
 def wait_for_healthy(
     container_name: str,
     timeout: int = 120,
