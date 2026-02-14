@@ -1,0 +1,42 @@
+# OpenClaw Deployment Configuration - Example
+# Copy this file and customize for your deployment
+
+# Deployment paths
+project_dir: "/path/to/openclaw-deployment"
+openclaw_home: "/home/user/.openclaw"
+workspace_dir: "/home/user/openclaw/workspace"
+
+# Docker settings
+image_name: "openclaw:local"
+container_name: "openclaw-gateway"
+gateway_port: 18789
+openclaw_version: "latest"
+
+# Gateway settings
+gateway_token: "your-secure-token-here"  # Or leave null to auto-generate
+gateway_bind: "lan"
+
+# API Keys - Configure at least one provider
+anthropic_api_key: "sk-ant-api03-your-key-here"
+openai_api_key: null  # "sk-your-openai-key-here"
+google_ai_api_key: null  # "your-google-ai-key-here"
+ollama_base_url: null  # "http://localhost:11434" for local Ollama
+
+# Build settings - Optional system packages to install
+apt_packages: "ffmpeg imagemagick"
+
+# Volume settings
+home_volume: "openclaw-home"
+
+# Deployment settings
+restart_policy: "unless-stopped"
+read_only: true
+tmpfs_size: "512M"
+log_max_size: "10m"
+log_max_file: "3"
+
+# Health check settings
+health_interval: 30
+health_timeout: 10
+health_start_period: 60
+health_retries: 3

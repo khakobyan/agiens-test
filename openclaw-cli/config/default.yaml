@@ -1,0 +1,40 @@
+# OpenClaw Deployment Configuration
+# Default configuration file
+
+# Deployment paths
+project_dir: "."  # Project directory (default: current directory)
+openclaw_home: "~/.openclaw"  # OpenClaw configuration directory
+workspace_dir: "~/openclaw/workspace"  # Agent workspace directory
+
+# Docker settings
+image_name: "openclaw:local"
+container_name: "openclaw-gateway"
+gateway_port: 18789
+openclaw_version: "latest"  # Git tag or "latest"
+
+# Gateway settings
+gateway_token: null  # Auto-generated if not provided
+gateway_bind: "lan"
+
+# API Keys (configure at least one)
+anthropic_api_key: null
+openai_api_key: null
+google_ai_api_key: null
+ollama_base_url: null
+
+# Build settings
+apt_packages: ""  # Space-separated list of apt packages
+home_volume: "openclaw-home"
+
+# Deployment settings
+restart_policy: "unless-stopped"
+read_only: true
+tmpfs_size: "512M"
+log_max_size: "10m"
+log_max_file: "3"
+
+# Health check settings
+health_interval: 30
+health_timeout: 10
+health_start_period: 60
+health_retries: 3
