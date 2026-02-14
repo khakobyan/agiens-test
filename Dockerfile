@@ -51,6 +51,7 @@ RUN if [ -n "$OPENCLAW_DOCKER_APT_PACKAGES" ]; then \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     tini \
+    git \
     python3 \
     python3-pip \
     python3-venv \
