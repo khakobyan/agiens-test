@@ -7,6 +7,7 @@ services:
         OPENCLAW_DOCKER_APT_PACKAGES: ${OPENCLAW_DOCKER_APT_PACKAGES:-}
     image: openclaw:local
     container_name: openclaw-gateway
+    # Remove the problematic command, let it use defaults
     restart: unless-stopped
     ports:
       - "18789:18789"
@@ -16,17 +17,16 @@ services:
       - openclaw-home:/home/node
     tmpfs:
       - /tmp:size=512M
-    read_only: true
     environment:
-      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-}
-      - OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND:-lan}
+      - NODE_ENV=production
+      - OPENCLAW_GATEWAY_MODE=local
+      - OPENCLAW_GATEWAY_BIND=0.0.0.0
+      - OPENCLAW_GATEWAY_PORT=18789
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
-      - NODE_ENV=production
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:18789/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:18789/health || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 60s
@@ -36,8 +36,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    security_opt:
-      - no-new-privileges:true
 
   openclaw-cli:
     image: openclaw:local
@@ -49,7 +47,7 @@ services:
       - ${HOME:-.}/openclaw/workspace:/home/node/.openclaw/workspace
       - openclaw-home:/home/node
     environment:
-      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-}
+      - OPENCLAW_GATEWAY_MODE=local
     entrypoint: ["node", "dist/index.js"]
     command: ["status"]
     depends_on:
@@ -58,4 +56,3 @@ services:
 
 volumes:
   openclaw-home:
-    name: ${OPENCLAW_HOME_VOLUME:-openclaw-home}

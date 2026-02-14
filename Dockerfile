@@ -29,6 +29,8 @@ RUN pnpm install --frozen-lockfile \
     && pnpm approve-builds \
     && pnpm build
 
+ENV CI=true
+
 # Prune dev dependencies for smaller runtime image
 RUN pnpm prune --prod
 
