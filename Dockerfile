@@ -47,10 +47,14 @@ RUN if [ -n "$OPENCLAW_DOCKER_APT_PACKAGES" ]; then \
       && rm -rf /var/lib/apt/lists/*; \
     fi
 
-# Install common runtime utilities
+# Install common runtime utilities including Python for openclaw-deploy
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     tini \
+    python3 \
+    python3-pip \
+    python3-venv \
+    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app directory owned by node user
@@ -59,6 +63,15 @@ RUN chown node:node /app
 
 # Copy built application from builder stage
 COPY --from=builder --chown=node:node /build /app
+
+# Install openclaw-deploy tool for self-deployment capability
+COPY openclaw-cli /tmp/openclaw-cli
+RUN pip3 install --no-cache-dir --break-system-packages /tmp/openclaw-cli \
+    && rm -rf /tmp/openclaw-cli
+
+# Create self-deploy script
+COPY scripts/self-deploy.sh /usr/local/bin/openclaw-self-deploy
+RUN chmod +x /usr/local/bin/openclaw-self-deploy
 
 # Create directories for persistence (will be mounted as volumes)
 RUN mkdir -p /home/node/.openclaw /home/node/.openclaw/workspace \

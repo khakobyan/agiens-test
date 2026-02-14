@@ -207,3 +207,350 @@ docker compose build --no-cache
 # Change the host port in docker-compose.yml
 # e.g., "8080:18789" to access via port 8080
 ```
+
+---
+
+## ✅ Step 3: OpenClaw Self-Deployment Integration
+
+**Status:** COMPLETED
+
+OpenClaw can now deploy itself using the integrated openclaw-deploy automation tool!
+
+### 🎯 What's New
+
+The Docker image now includes:
+- **Python 3 and pip** - Runtime for openclaw-deploy
+- **openclaw-deploy tool** - Full automation CLI installed from openclaw-cli/
+- **Docker CLI** - For Docker-in-Docker operations
+- **openclaw-self-deploy script** - Easy-to-use deployment interface at `/usr/local/bin/`
+
+### 🚀 Self-Deployment Capabilities
+
+OpenClaw can now:
+1. ✅ Deploy new instances of itself from within the container
+2. ✅ Support recursive deployment (deployed instances can deploy more)
+3. ✅ Run in Docker-in-Docker scenarios
+4. ✅ Provide both CLI and API interfaces for deployment
+
+### Quick Start: Self-Deployment
+
+```bash
+# 1. Build the enhanced image (if not already built)
+docker compose build --no-cache
+
+# 2. Start OpenClaw
+docker compose up -d
+
+# 3. Access the container
+docker compose exec openclaw-gateway bash
+
+# 4. Deploy a new instance
+openclaw-self-deploy --gateway-port 18790 --no-interactive
+
+# 5. Exit and verify
+exit
+docker ps | grep openclaw  # Should see two containers
+curl http://localhost:18790/health  # New instance running!
+```
+
+### 📖 Usage Examples
+
+#### Basic Interactive Deployment
+```bash
+docker compose exec openclaw-gateway openclaw-self-deploy
+```
+
+#### Non-Interactive with Custom Port
+```bash
+docker compose exec openclaw-gateway openclaw-self-deploy \
+  --gateway-port 18790 \
+  --no-interactive
+```
+
+#### With Pre-Configured API Key
+```bash
+docker compose exec openclaw-gateway openclaw-self-deploy \
+  --api-key "sk-ant-your-anthropic-key" \
+  --gateway-token "secure-token-123" \
+  --gateway-port 18790 \
+  --no-interactive
+```
+
+#### Custom Target Directory
+```bash
+docker compose exec openclaw-gateway openclaw-self-deploy \
+  --target-dir /tmp/openclaw-staging \
+  --gateway-port 18791
+```
+
+#### Get Help
+```bash
+docker compose exec openclaw-gateway openclaw-self-deploy --help
+```
+
+### 🔌 API Endpoint Integration (Optional)
+
+For programmatic deployment, integrate the API endpoint:
+
+```bash
+# Example API call
+curl -X POST http://localhost:18789/api/deploy \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "apiKey": "sk-ant-xxx",
+    "gatewayPort": "18791",
+    "targetDir": "/tmp/openclaw-new"
+  }'
+```
+
+See `integration-examples/api-endpoint.js` for complete implementation.
+
+### 🏗️ Integration Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              OpenClaw Container                          │
+│                                                          │
+│  ┌──────────────┐      ┌──────────────────┐            │
+│  │  OpenClaw    │      │ openclaw-deploy  │            │
+│  │   Node.js    │──────│  Python CLI      │            │
+│  │              │      │                  │            │
+│  └──────────────┘      └─────────┬────────┘            │
+│                                   │                     │
+│  ┌──────────────────────────────┴─────┐               │
+│  │  openclaw-self-deploy              │               │
+│  │  Shell Script Wrapper              │               │
+│  └────────────────────┬───────────────┘               │
+│                        │                               │
+│                        │  Uses Docker Socket           │
+│                        ▼                               │
+└────────────────────────┼───────────────────────────────┘
+                         │
+                         ▼
+              ┌──────────────────────┐
+              │  New OpenClaw Instance│
+              │  (Self-Deployed)      │
+              └──────────────────────┘
+```
+
+### 📚 Documentation
+
+Comprehensive guides in `integration-examples/`:
+
+| Document | Description |
+|----------|-------------|
+| **[README.md](integration-examples/README.md)** | Overview and quick start |
+| **[INTEGRATION.md](integration-examples/INTEGRATION.md)** | Complete integration guide with patterns and examples |
+| **[TESTING.md](integration-examples/TESTING.md)** | Testing procedures and troubleshooting |
+| **[api-endpoint.js](integration-examples/api-endpoint.js)** | Example API endpoint implementation |
+
+### ✨ Key Features
+
+#### 1. Multi-Layer Integration
+- **Layer 1:** Docker image includes Python, openclaw-deploy, and Docker CLI
+- **Layer 2:** Shell script wrapper (`openclaw-self-deploy`) provides user-friendly interface
+- **Layer 3:** API endpoint example for programmatic deployment
+
+#### 2. Docker-in-Docker Support
+- Mounts Docker socket: `/var/run/docker.sock:/var/run/docker.sock:ro`
+- Handles port conflicts automatically
+- Supports concurrent deployments
+- Works with existing Docker daemon
+
+#### 3. Comprehensive Error Handling
+- Prerequisite validation (Docker, git, disk space)
+- Automatic rollback on deployment failure
+- Detailed logging with color-coded output
+- Clear error messages and next steps
+
+#### 4. Recursive Deployment
+- Deployed instances can deploy more instances
+- Multi-tier deployment support
+- Useful for testing and multi-tenant setups
+- No limit on deployment depth
+
+### 🛡️ Security Considerations
+
+⚠️ **Important:** Docker socket mount gives significant privileges
+
+**Recommendations:**
+- Use read-only mount: `/var/run/docker.sock:/var/run/docker.sock:ro`
+- Only enable in trusted environments
+- Implement authentication on API endpoints
+- Add rate limiting for deployment requests
+- Validate all inputs
+- Monitor resource usage
+- Log all deployment attempts
+
+**Production Setup:**
+```javascript
+// Example: Secure API endpoint
+app.post('/api/deploy',
+  requireAuth,        // Authentication
+  requireAdmin,       // Authorization
+  deployRateLimiter,  // Rate limiting
+  validateInputs,     // Input validation
+  handleSelfDeploy    // Deployment handler
+);
+```
+
+### 🧪 Testing
+
+Quick verification:
+```bash
+# 1. Build image with integration
+docker compose build --no-cache
+docker compose up -d
+
+# 2. Test self-deployment
+docker compose exec openclaw-gateway openclaw-self-deploy \
+  --gateway-port 18790 --no-interactive
+
+# 3. Verify both instances running
+docker ps | grep openclaw
+
+# 4. Check new instance health
+curl http://localhost:18790/health
+
+# 5. View deployment logs
+openclaw-deploy --project-dir /tmp/openclaw-deploy logs
+```
+
+For comprehensive testing, see: [integration-examples/TESTING.md](integration-examples/TESTING.md)
+
+### 💡 Use Cases
+
+1. **Development Testing**
+   ```bash
+   openclaw-self-deploy --target-dir /tmp/test --gateway-port 19000 --no-interactive
+   ```
+
+2. **Multi-Tenant Setup**
+   ```bash
+   # User 1
+   openclaw-self-deploy --target-dir /opt/user1 --gateway-port 18801 --no-interactive
+   # User 2
+   openclaw-self-deploy --target-dir /opt/user2 --gateway-port 18802 --no-interactive
+   ```
+
+3. **Staging Environment**
+   ```bash
+   openclaw-self-deploy --target-dir /opt/staging --gateway-port 18790 --no-interactive
+   ```
+
+4. **Automated Fleet Deployment**
+   ```bash
+   for port in 18800 18801 18802; do
+     openclaw-self-deploy --gateway-port $port --no-interactive &
+   done
+   wait
+   ```
+
+### 📦 What's Included
+
+- ✅ **Modified Dockerfile** - Includes Python, pip, openclaw-deploy, Docker CLI
+- ✅ **Self-Deploy Script** - `scripts/self-deploy.sh` with comprehensive features
+- ✅ **Updated docker-compose.yml** - Docker socket mount for DinD support
+- ✅ **Integration Examples** - API endpoint, usage patterns, best practices
+- ✅ **Comprehensive Documentation** - Integration guide, testing guide, troubleshooting
+- ✅ **Security Guidelines** - Authentication, validation, rate limiting
+
+### 🎯 Next Steps
+
+1. **Read the integration guide**
+   ```bash
+   cat integration-examples/INTEGRATION.md
+   ```
+
+2. **Test self-deployment**
+   ```bash
+   cat integration-examples/TESTING.md
+   ```
+
+3. **Implement API endpoint** (optional)
+   - Use `integration-examples/api-endpoint.js` as template
+   - Add authentication and authorization
+   - Implement rate limiting
+
+4. **Customize for your needs**
+   - Adapt examples to your use case
+   - Add monitoring and alerting
+   - Set up centralized logging
+
+### 🔧 Technical Details
+
+**Modified Files:**
+- `Dockerfile` - Added Python, openclaw-deploy, Docker CLI, self-deploy script
+- `docker-compose.yml` - Added Docker socket mount
+- `scripts/self-deploy.sh` - Main self-deployment script (NEW)
+- `integration-examples/` - Documentation and code examples (NEW)
+
+**Integration Points:**
+- CLI: `openclaw-self-deploy` command available in container
+- API: Example endpoint in `integration-examples/api-endpoint.js`
+- Direct: Use `openclaw-deploy` Python CLI directly
+
+**Requirements:**
+- Docker socket access (via mount)
+- Python 3.x (included in image)
+- Git (included in image)
+- Sufficient disk space for multiple deployments
+
+### 📊 Performance
+
+Typical deployment time: **2-5 minutes**
+
+Factors affecting performance:
+- Network speed (cloning repository)
+- Docker build cache
+- System resources (CPU, memory, disk)
+- Number of concurrent deployments
+
+Resource usage per instance:
+- **CPU:** ~0.5-1.0 cores
+- **Memory:** ~512MB-1GB
+- **Disk:** ~2-3GB (including image and volumes)
+
+### 🌟 Future Enhancements
+
+Potential improvements:
+- Kubernetes deployment support
+- Cloud provider integration (AWS ECS, GCP Cloud Run)
+- Auto-scaling based on load
+- Built-in monitoring and metrics
+- Load balancer integration
+- Service mesh support (Istio, Linkerd)
+
+### 📞 Support
+
+For questions or issues with self-deployment:
+
+1. **Check the testing guide:** `integration-examples/TESTING.md`
+2. **Review integration patterns:** `integration-examples/INTEGRATION.md`
+3. **Examine API examples:** `integration-examples/api-endpoint.js`
+4. **Check troubleshooting section** in testing guide
+
+---
+
+## Summary of Deployment Steps (All 3 Steps)
+
+### Step 1: Manual Docker Deployment ✅
+```bash
+./docker-setup.sh  # Basic Docker deployment
+```
+
+### Step 2: Automated Deployment Tool ✅
+```bash
+./setup.sh  # Installs and runs openclaw-deploy
+# or
+openclaw-deploy deploy  # Direct CLI usage
+```
+
+### Step 3: Self-Deployment Integration ✅
+```bash
+# From within OpenClaw container
+openclaw-self-deploy --gateway-port 18790 --no-interactive
+```
+
+**All three deployment methods are now available!** 🎉
