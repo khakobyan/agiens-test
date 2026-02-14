@@ -3,6 +3,7 @@ Deployment command implementation.
 """
 
 import sys
+import time
 import logging
 from pathlib import Path
 from typing import Optional
@@ -11,7 +12,7 @@ from .config import DeploymentConfig, load_config
 from .validators import validate_and_report, ValidationError
 from .docker_utils import (
     create_directories, generate_env_file, build_image,
-    start_services, wait_for_healthy, get_logs, DockerError
+    start_services, configure_openclaw, wait_for_healthy, get_logs, DockerError
 )
 from .rollback import RollbackManager, cleanup_failed_deployment
 
@@ -77,7 +78,7 @@ def run_deploy(
 
     try:
         # Step 1: Validate prerequisites
-        logger.info("Step 1/6: Validating prerequisites")
+        logger.info("Step 1/7: Validating prerequisites")
         logger.info("-" * 50)
 
         validate_and_report(
@@ -89,7 +90,7 @@ def run_deploy(
         logger.info("")
 
         # Step 2: Create directories
-        logger.info("Step 2/6: Creating host directories")
+        logger.info("Step 2/7: Creating host directories")
         logger.info("-" * 50)
 
         create_directories(config)
@@ -97,7 +98,7 @@ def run_deploy(
         logger.info("")
 
         # Step 3: Generate environment file
-        logger.info("Step 3/6: Generating environment configuration")
+        logger.info("Step 3/7: Generating environment configuration")
         logger.info("-" * 50)
 
         env_file = config.project_dir / '.env'
@@ -124,7 +125,7 @@ def run_deploy(
         logger.info("")
 
         # Step 4: Build Docker image
-        logger.info("Step 4/6: Building Docker image")
+        logger.info("Step 4/7: Building Docker image")
         logger.info("-" * 50)
 
         build_image(config, no_cache=no_cache)
@@ -133,16 +134,28 @@ def run_deploy(
         logger.info("")
 
         # Step 5: Start services
-        logger.info("Step 5/6: Starting services")
+        logger.info("Step 5/7: Starting services")
         logger.info("-" * 50)
 
         start_services(config)
         rollback.add_action("Stop services", cleanup_failed_deployment, config, False)
         logger.info("")
 
-        # Step 6: Health check
+        # Step 6: Configure OpenClaw
+        logger.info("Step 6/7: Configuring OpenClaw gateway")
+        logger.info("-" * 50)
+
+        configure_openclaw(config)
+        logger.info("")
+
+        # Wait for configuration to settle
+        logger.info("Waiting for gateway to stabilize...")
+        time.sleep(8)
+        logger.info("")
+
+        # Step 7: Health check
         if not skip_health_check:
-            logger.info("Step 6/6: Verifying deployment health")
+            logger.info("Step 7/7: Verifying deployment health")
             logger.info("-" * 50)
 
             healthy = wait_for_healthy(
@@ -168,7 +181,7 @@ def run_deploy(
 
             logger.info("")
         else:
-            logger.info("Step 6/6: Health check skipped")
+            logger.info("Step 7/7: Health check skipped")
             logger.info("")
 
         # Success - clear rollback actions

@@ -78,7 +78,8 @@ openclaw-deploy deploy --no-rollback
 3. Generates environment configuration
 4. Builds Docker image
 5. Starts services
-6. Verifies deployment health
+6. Configures OpenClaw gateway (sets local mode and auth token)
+7. Verifies deployment health
 
 On failure, automatically rolls back changes unless `--no-rollback` is specified.
 

@@ -10,11 +10,41 @@ Production-ready Docker setup for [OpenClaw](https://github.com/openclaw/opencla
 
 ## Quick Start
 
+### Option 1: Automated Setup (Recommended)
+
+One-command setup using the deployment automation tool:
+
+```bash
+./setup.sh
+```
+
+This script will:
+1. Check all prerequisites (Docker, Docker Compose, Python, disk space)
+2. Install the `openclaw-deploy` automation tool
+3. Run the automated deployment workflow:
+   - Create persistence directories (`~/.openclaw`, `~/openclaw/workspace`)
+   - Generate `.env` file with a random gateway token
+   - Build the Docker image
+   - Start the services
+   - Configure OpenClaw gateway (local mode + auth token)
+   - Verify deployment health
+   - Print access information
+
+After successful deployment, edit `.env` to add your API key(s), then restart:
+
+```bash
+openclaw-deploy update
+# or
+docker compose restart
+```
+
+### Option 2: Manual Docker Setup
+
 ```bash
 ./docker-setup.sh
 ```
 
-This script will:
+This basic script will:
 1. Verify Docker prerequisites
 2. Create persistence directories (`~/.openclaw`, `~/openclaw/workspace`)
 3. Generate a `.env` file with a random gateway token
@@ -47,6 +77,41 @@ docker compose logs -f openclaw-gateway
 ```
 
 Access the web UI at `http://localhost:18789?token=<your-token>`.
+
+## Deployment Automation Tool
+
+The `openclaw-deploy` CLI tool provides production-ready automation for OpenClaw deployments with intelligent rollback, health verification, and comprehensive error handling.
+
+### Installation
+
+```bash
+# Install from source
+pip install -e openclaw-cli/
+
+# Or use directly without installation
+cd openclaw-cli && python -m openclaw_deploy.cli --help
+```
+
+### Usage
+
+```bash
+# Deploy OpenClaw
+openclaw-deploy deploy
+
+# Check deployment status
+openclaw-deploy status
+
+# View logs
+openclaw-deploy logs --follow
+
+# Update to latest version
+openclaw-deploy update
+
+# Clean up deployment
+openclaw-deploy cleanup
+```
+
+See [openclaw-cli/README.md](openclaw-cli/README.md) for complete documentation.
 
 ## Configuration
 
